@@ -1,103 +1,103 @@
 """
-Ici on va définir tous les agents de notre modèle, c'est à dire les maisons ainsi que les 
-cambrioleurs.
+Ici on va définir tous les agents de notre modèle, c'est à dire les maisons ainsi que les cambrioleurs.
 """
 """
 Avec p s(t)=1-exp(-As(t)*δt) ce qui est logique puisque quand A(s) est grand la probabilite de cambrioler
 la maison est proche de 1
 """
 from mesa import Agent
-import math
 import random
 import numpy as np
 
 class House(Agent):
     """
     Une classe représentant chaque maison de notre modèle avec Mesa.
-    Attributes: 
+    Attributs: 
     -----------
     unique_id : int
         son numéro
-    attractiveness : float
-        son attractivité pour les cambrioleurs 
-    x_point, y_point : float, float
+    attract: float
+        la composante statique de son attractivité pour les cambrioleurs 
+    x, y: float, float
         sa localisation
-    delta : float
-        variation de temps
     omega : float
         fixe une échelle de temps sur laquelle les victimisations répétées sont les plus 
         susceptibles de se produire
+    delta : float
+        variation de temps    
     theta: float
-        la quantité fixe que l'on ajoute à l'attractivité dynamique beta à chaque fois 
+        la quantité fixe que l'on ajoute à l'attractivité dynamique Bs à chaque fois 
         qu'une maison est cambriolée
-    mu : float
+    eta : float
         un paramètre compris entre zéro et l'unité qui mesure la valeur 
         des eﬀets de voisinage.
 
     """
-    def __init__(self, unique_id, model, attractiveness, x_point, y_point, delta, omega, theta, mu):
+    def __init__(self, unique_id, model, attract, x, y, omega, delta, theta, eta):
         super().__init__(unique_id, model)       
-        self.x_point = x_point
-        self.y_point = y_point
+        self.attract = attract
+        self.x = x
+        self.y = y
         self.omega = omega
         self.delta = delta
         self.theta = theta
-        self.mu = mu
-        self.attractiveness = attractiveness
-        self.crime_events = 0
-        self.crime_list = [0]
-        self.beta = 0
-        self.att_t = self.attractiveness + self.beta
-        self.pst = 1 - np.exp(-self.att_t*self.delta)
+        self.eta = eta
+        self.crimes = 0                                 # Es(t) de notre modèle donnée par l'équation 2-4
+        self.crime_liste = [0]
+        self.Bs = 0
+        self.As = self.attract + self.Bs
+        self.proba = 1 - np.exp(-self.As*self.delta)    # voir equation 2-2
 
     def burgle(self):
         """ 
         On ajoute 1 à crime events quand un crime est commit
         """
-        self.crime_events = self.crime_events + 1
+        self.crimes = self.crimes + 1
 
-    def new_beta(self):
+    def new_Bs(self):
         """
         On cherche dans le modèle toutes les maisons voisines à la maison choisie 
         et ensuite on applique la formule (2-6) du support pour déterminer la nouvelle valeur 
-        de beta à l'instant t+delta
+        de Bs à l'instant t+delta
         """
-        voisins = self.model.grid.get_neighbors(pos=(self.x_point, self.y_point),
-        moore=False, include_center=False, radius=1)
-        b = 0
-        for i in voisins:
-            if isinstance(i, House): # on regarde si il s'agit d'une maison
-                b = b + i.beta
-        self._beta = (self.beta + (self.mu / 4) * (b - 4 * self.beta)) * (1 - self.omega * (
-            self.delta)) + self.theta * self.crime_events
+        voisins = self.model.grid.get_neighbors(pos=(self.x, self.y),moore=False, include_center=False, radius=1)
+        Bsv = 0
+        if isinstance(v, House):                        # on regarde si il s'agit d'une maison
+            Bsv = np.sum([v.Bs for v in voisins])
+  
+        laplacien = Bsv - (4 * self.Bs)                 # on calcule laplacien*(l**2) avec la formule 2-7
+        self.nBs = (self.Bs + (self.eta / 4) * laplacien) * (1 - self.omega * (self.delta)) + self.theta * self.crimes
 
-    def new_att(self):
+    def new_As(self):
         """
-        On calcule la nouvelle valeur de att_t à l'instant t+delta
+        On calcule la valeur de As 
         """
-        self._att_t = self.beta + self.attractiveness
+        self.nAs = self.Bs + self.attract
 
-    def new_pst(self):
+    def new_proba(self):
         """
-        On calcule la nouvelle valeur de pst à l'instant t+delta
+        On calcule la valeur de proba 
         """
-        self._pst = 1 - np.exp(-self.att_t * self.delta)
+        self.nproba = 1 - np.exp(-self.As * self.delta)
 
 
     def step(self):
-        self.new_beta()
-        self.new_att()
-        self.new_pst()
+        """
+        Etat du système à t
+        """
+        self.new_Bs()
+        self.new_As()
+        self.new_proba()
 
     def new_values(self):
         """
         On remplace les anciennes valeurs à l'instant t par les nouvelles valeurs obtenues 
-        à l'instant t+delta
+        à l'instant t+delta et on réinitialise le nombre de crimes
         """
-        self.att_t = self._att_t
-        self.beta = self._beta
-        self.pst = self._pst
-        self.crime_events = 0
+        self.As = self.nAs
+        self.Bs = self.nBs
+        self.proba = self.nproba
+        self.crimes = 0
 
 
 """
@@ -106,76 +106,75 @@ l'environnement et est représenté par ses coordonnées (x_point, y_point), on 
 son choix modeliser par decision valant 0 si il decide de ne pas commettre le crime et 1
 quand il décide de le commettre
 """
-class Criminal(Agent):
+class Criminel(Agent):
     """
     Une classe représentant chaque cambrioleur.
     Attributes: 
     -----------
     unique_id : int
         son numéro
-    attractiveness : float
+    attract : float
         son attractivité pour les cambrioleurs 
-    width, height : float, float
+    longueur, largeur : float, float
         dimensions de l'espace
     """
-    def __init__(self, unique_id, model, width, height):
+    def __init__(self, unique_id, model, longueur, largeur):
         super().__init__(unique_id, model)
-        self.x_point = random.randint(0, width-1)
-        self.y_point = random.randint(0, height-1)
-        self.decision = 0  
+        self.x = random.randint(0, longueur-1)
+        self.y = random.randint(0, largeur-1)
+        self.choix = 0  
 
-    def burgle_decision(self):
+    def burgle_choix(self):
         """
-        Réinitialise la valeur de self.decision à  0 si le cambrioleur décide de quitter la maison et 1 si il 
+        Attribut 0 comme valeur de self.decision si le cambrioleur décide de quitter la maison et 1 si il 
         décide de la cambrioler.
         """
-        cell_contents = self.model.grid.get_cell_list_contents([(self.x_point, self.y_point)])
-        # renvoie une liste des agents contenus dans le noeuds identifiés les noeuds dont le contenu est vide sont exclus.
+        cell_contents = self.model.grid.get_cell_list_contents([(self.x, self.y)])
+        # renvoie une liste des agents contenus dans la cellule identifiés les cellules  dont le contenu est vide sont exclus.
         for i in cell_contents:
             if isinstance(i, House):   # on regarde si il s'agit d'un criminel
-                p = i.pst
-                y = random.random()    # on choisit arbitrairement un nombre entre 0 et 1
-                if y < p:
-                    self.decision = 1  # le crime est commit
+                p = i.proba
+                p_prime = random.random()    # on choisit arbitrairement un nombre entre 0 et 1
+                if p_prime < p:
+                    self.choix = 1  # le crime est commit
                 else:
-                    self.decision = 0  # sinon on quitte les lieux
+                    self.choix = 0  # sinon on quitte les lieux
 
     def move(self):
         """
         Renvoie 0 si le cambrioleur décide de quitter la maison et 1 si il 
         décide de la cambrioler.
         """
-        voisins = self.model.grid.get_neighbors(pos=(self.x_point, self.y_point), moore=False,
-                                                  include_center=False, radius=1)
+        voisins = self.model.grid.get_neighbors(pos=(self.x, self.y), moore=False, include_center=False, radius=1)
         # on calcule la somme des attractivités des maisons au voisinage de la maison où se trouve 
         # le criminel
-        a_t_sum = 0
-        for i in voisins:
-            if isinstance(i, House):
-                a_t_sum = a_t_sum + i.att_t
-
+        Asum = 0
+        A = [v.As  for v in voisins]
+        if isinstance(v, House):
+            Asum = sum(A)
+            
         # on calcule la probabilité d'aller dans chacune des maisons avec la formule donnée par 2-3
         move = []
-        for i in voisins:
-            if isinstance(i, House): # on vérifie qu'il s'agit bien d'une maison
+        for v in voisins:
+            if isinstance(v, House): # on vérifie qu'il s'agit bien d'une maison
                 move_dict = {}
-                move_dict['house'] = (i.x_point, i.y_point)
-                move_dict['prob'] = i.att_t / a_t_sum
+                move_dict['house'] = (v.x, v.y) 
+                move_dict['chance'] = v.As / Asum
                 move.append(move_dict)
 
         # on ordonne move par probabilite croissant
-        move = sorted(move, key=lambda i: i['prob'])
+        move = sorted(move, key=lambda i: i['chance'])
         
         # on cumule les probas afin de ne pas toujours choisir les maisons qui ont les plus grande attractivités
         cp = 0
         for i in range(len(move)):
-            cp = cp + move[i]['prob']
-            move[i]['prob'] = cp
+            cp = cp + move[i]['chance']
+            move[i]['chance'] = cp
 
         # on décide si on bouge ou pas
         p = random.random()
         for m in move:
-            if p < m['prob']:
+            if p < m['chance']:
                 move_dest = m['house']
                 self.model.grid.move_agent(self, pos=move_dest)
                 break
@@ -183,11 +182,11 @@ class Criminal(Agent):
                 continue
 
     def step(self):
-        self.burgle_decision()
+        self.burgle_choix()
 
     def advance(self):
-        if self.decision == 1:
-            cell_contents = self.model.grid.get_cell_list_contents([(self.x_point, self.y_point)])
+        if self.choix == 1:
+            cell_contents = self.model.grid.get_cell_list_contents([(self.x, self.y)])
             for i in cell_contents:
                 if isinstance(i, House):
                     i.burgle()
