@@ -2,7 +2,7 @@ from mesa import Model
 from mesa.space import MultiGrid
 from mesa.time import SimultaneousActivation
 from mesa.datacollection import DataCollector
-from agent import House, Criminal
+from agent import House, Criminel
 import math
 from statistics import mean, median
 import random
@@ -83,15 +83,15 @@ class BurglaryModel(Model):
                 num = str(i) + str(j)
                 num = int(num)
                 a = House(num, self, a_0, i, j, self.delta, self.omega, self.theta, self.mu, self.space)
-                self.grid.place_agent(a, (a.x_point, a.y_point))
+                self.grid.place_agent(a, (a.x, a.y))
                 self.house_schedule.add(a)
 
         # place the criminals
         for k in range(self.num_agents):
             unique_id = "criminal" + str(k)
-            criminal = Criminal(unique_id, self, self.width, self.height)
-            self.grid.place_agent(criminal, (criminal.x_point, criminal.y_point))
-            self.schedule.add(criminal)
+            criminel = Criminel(unique_id, self, self.largeur,  self.longueur)
+            self.grid.place_agent(criminel, (criminel.x, criminel.y))
+            self.schedule.add(criminel)
 
         # set up data collection
         self.datacollector = DataCollector(
@@ -110,9 +110,9 @@ class BurglaryModel(Model):
             y = random.random()
             if y < self.gen_agent:
                 unique_id = "criminal" + str(start_count)
-                criminal = Criminal(unique_id, self, self.width, self.height)
-                self.grid.place_agent(criminal, (criminal.x_point, criminal.y_point))
-                self.schedule.add(criminal)
+                criminel = Criminel(unique_id, self, self.largeur, self.longeur)
+                self.grid.place_agent(criminel, (criminal.x, criminal.y))
+                self.schedule.add(criminel)
                 start_count = start_count + 1
                 self.total_agents = start_count
                 self.num_agents = self.num_agents + 1

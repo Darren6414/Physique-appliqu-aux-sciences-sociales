@@ -33,15 +33,16 @@ class House(Agent):
         des eﬀets de voisinage.
 
     """
-    def __init__(self, unique_id, model, attract, x, y, omega, delta, theta, eta):
+    def __init__(self, unique_id, model, attract, x, y, delta, omega, theta, eta, space):
         super().__init__(unique_id, model)       
         self.attract = attract
         self.x = x
         self.y = y
-        self.omega = omega
         self.delta = delta
+        self.omega = omega
         self.theta = theta
         self.eta = eta
+        self.space = space
         self.crimes = 0                                 # Es(t) de notre modèle donnée par l'équation 2-4
         self.crime_liste = [0]
         self.Bs = 0
@@ -118,10 +119,10 @@ class Criminel(Agent):
     longueur, largeur : float, float
         dimensions de l'espace
     """
-    def __init__(self, unique_id, model, longueur, largeur):
+    def __init__(self, unique_id, model, largeur, longueur):
         super().__init__(unique_id, model)
-        self.x = random.randint(0, longueur-1)
-        self.y = random.randint(0, largeur-1)
+        self.x = random.randint(0, largeur-1)
+        self.y = random.randint(0, longueur-1)
         self.choix = 0  
 
     def burgle_choix(self):
