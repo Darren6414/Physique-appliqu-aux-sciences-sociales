@@ -3,38 +3,37 @@ from mesa.space import MultiGrid
 from mesa.time import SimultaneousActivation
 from mesa.datacollection import DataCollector
 from agent import House, Criminel
-import math
 from statistics import mean, median
 import random
 import numpy as np
 
 
-def get_mean_att(model):
+def As_moyenne(model):
     att = [house.As for house in model.house_schedule.agents]
     return median(att)
 
 
-def get_max_att(model):
+def As_maxi(model):
     att = [house.As for house in model.house_schedule.agents]
     return max(att)
 
 
-def get_min_att(model):
+def As_min(model):
     att = [house.As for house in model.house_schedule.agents]
     return min(att)
 
 
-def get_num_criminels(model):
+def id_criminels(model):
     return model.num_agents
 
-def get_num_burgles(model):
+def num_burgles(model):
     att = [house.crimes for house in model.house_schedule.agents]
     return sum(att)
 
 
-def get_att_map(model):
+def As_map(model):
     # create numpy matrix
-    crime_counts = np.zeros((model.grid.width, model.grid.height))
+    crime_counts = np.zeros((model.grid.largeur, model.grid.longueur))
 
     for cell in model.grid.coord_iter():
         content, x, y = cell
@@ -45,7 +44,7 @@ def get_att_map(model):
                 crime_counts[x][y] = crimes
     return crime_counts
 
-def get_max_att_pos(model):
+def As_maxi_pos(model):
     max_pos=()
     max_att=0
     for row in model.house_schedule.agents:
@@ -72,7 +71,7 @@ class BurglaryModel(Model):
         self.mu = mu
         self.kill_agents = []
         self.gamma = gamma
-        self.gen_agent = 1 - math.exp(-self.gamma*self.delta)
+        self.gen_agent = 1 - np.exp(-self.gamma*self.delta)
         self.total_agents = self.num_agents
         self.space = space
 
@@ -95,26 +94,26 @@ class BurglaryModel(Model):
 
         # set up data collection
         self.datacollector = DataCollector(
-            model_reporters={"Mean_Attractiveness": get_mean_att,
-                             "Max_Attractiveness": get_max_att,
-                             "Min_Attractiveness": get_min_att,
-                             "CrimeEvents": get_num_burgles,
-                             "Criminels": get_num_criminels,
-                             "MaxPos": get_max_att_pos},
+            model_reporters={"Moyenne_Attractivité": As_moyenne,
+                             "Maximum_Attractivité": As_maxi,
+                             "Minimum_Attractivité": As_min,
+                             "Crimes": num_burgles,
+                             "Criminels": id_criminels,
+                             "MaxPos": As_maxi_pos},
             agent_reporters={"Att": lambda x: x.As if x.unique_id[:1]!="c" else None})
 
 
     def add_criminels(self):
-        start_count = self.total_agents + 1
+        start = self.total_agents + 1
         for i in range(self.houses):
             y = random.random()
             if y < self.gen_agent:
-                unique_id = "criminel" + str(start_count)
+                unique_id = "criminel" + str(start)
                 criminel = Criminel(unique_id, self, self.largeur, self.longueur)
                 self.grid.place_agent(criminel, (criminel.x, criminel.y))
                 self.schedule.add(criminel)
-                start_count = start_count + 1
-                self.total_agents = start_count
+                start = start + 1
+                self.total_agents = start
                 self.num_agents = self.num_agents + 1
 
 

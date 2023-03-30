@@ -28,10 +28,10 @@ if __name__ == '__main__':
     plt.colorbar()
     plt.show()
 
-    att = model.datacollector.get_model_vars_dataframe()
+    As = model.datacollector.get_model_vars_dataframe()
     houses = model.datacollector.get_agent_vars_dataframe()
 
-    att.to_csv('model_stats.csv')
+    As.to_csv('model_stats.csv')
     houses.to_csv('houses.csv')
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
