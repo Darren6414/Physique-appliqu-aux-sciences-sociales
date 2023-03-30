@@ -67,7 +67,7 @@ class House(Agent):
             if isinstance(v, House):                        # on regarde si il s'agit d'une maison
                 Bsv = Bsv + v.Bs
   
-        laplacien = Bsv - (4 * self.Bs)                 # on calcule laplacien*(l**2) avec la formule 2-7
+        laplacien = Bsv - 4 * self.Bs               # on calcule laplacien*(l**2) avec la formule 2-7
         self.nBs = (self.Bs + (self.eta / 4) * laplacien) * (1 - self.omega * (self.delta)) + self.theta * self.crimes
 
     def new_As(self):
