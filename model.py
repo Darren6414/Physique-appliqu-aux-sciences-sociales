@@ -10,25 +10,25 @@ import numpy as np
 
 
 def get_mean_att(model):
-    att = [house.att_t for house in model.house_schedule.agents]
+    att = [house.As for house in model.house_schedule.agents]
     return median(att)
 
 
 def get_max_att(model):
-    att = [house.att_t for house in model.house_schedule.agents]
+    att = [house.As for house in model.house_schedule.agents]
     return max(att)
 
 
 def get_min_att(model):
-    att = [house.att_t for house in model.house_schedule.agents]
+    att = [house.As for house in model.house_schedule.agents]
     return min(att)
 
 
-def get_num_criminals(model):
+def get_num_criminels(model):
     return model.num_agents
 
 def get_num_burgles(model):
-    att = [house.crime_events for house in model.house_schedule.agents]
+    att = [house.crimes for house in model.house_schedule.agents]
     return sum(att)
 
 
@@ -41,7 +41,7 @@ def get_att_map(model):
         crimes = 0
         for row in content:
             if isinstance(row, House):
-                crimes = row.att_t
+                crimes = row.As
                 crime_counts[x][y] = crimes
     return crime_counts
 
@@ -49,20 +49,20 @@ def get_max_att_pos(model):
     max_pos=()
     max_att=0
     for row in model.house_schedule.agents:
-        if row.att_t > max_att:
+        if row.As > max_att:
             max_pos = row.pos
-            max_att = row.att_t
+            max_att = row.As
     return max_pos
 
 
 class BurglaryModel(Model):
 
-    def __init__(self, N, width, height, b_rate, delta, omega, theta, mu, gamma, space):
+    def __init__(self, N, largeur, longueur, b_rate, delta, omega, theta, mu, gamma, space):
         self.num_agents = N
-        self.grid = MultiGrid(width, height, True)
-        self.width = width
-        self.height = height
-        self.houses = self.width * self.height
+        self.grid = MultiGrid(largeur, longueur, True)
+        self.largeur = largeur
+        self.longueur = longueur
+        self.houses = self.largeur * self.longueur
         self.schedule = SimultaneousActivation(self)
         self.house_schedule = SimultaneousActivation(self)
         self.b_rate = b_rate
@@ -78,8 +78,8 @@ class BurglaryModel(Model):
 
         a_0 = 0.2
         # place houses on grid, 1 house per grid location
-        for i in range(self.width):
-            for j in range(self.height):
+        for i in range(self.largeur):
+            for j in range(self.longueur):
                 num = str(i) + str(j)
                 num = int(num)
                 a = House(num, self, a_0, i, j, self.delta, self.omega, self.theta, self.mu, self.space)
@@ -88,7 +88,7 @@ class BurglaryModel(Model):
 
         # place the criminals
         for k in range(self.num_agents):
-            unique_id = "criminal" + str(k)
+            unique_id = "criminel" + str(k)
             criminel = Criminel(unique_id, self, self.largeur,  self.longueur)
             self.grid.place_agent(criminel, (criminel.x, criminel.y))
             self.schedule.add(criminel)
@@ -99,19 +99,19 @@ class BurglaryModel(Model):
                              "Max_Attractiveness": get_max_att,
                              "Min_Attractiveness": get_min_att,
                              "CrimeEvents": get_num_burgles,
-                             "Criminals": get_num_criminals,
+                             "Criminels": get_num_criminels,
                              "MaxPos": get_max_att_pos},
-            agent_reporters={"Att": lambda x: x.att_t if x.unique_id[:1]!="c" else None})
+            agent_reporters={"Att": lambda x: x.As if x.unique_id[:1]!="c" else None})
 
 
-    def add_criminals(self):
+    def add_criminels(self):
         start_count = self.total_agents + 1
         for i in range(self.houses):
             y = random.random()
             if y < self.gen_agent:
-                unique_id = "criminal" + str(start_count)
-                criminel = Criminel(unique_id, self, self.largeur, self.longeur)
-                self.grid.place_agent(criminel, (criminal.x, criminal.y))
+                unique_id = "criminel" + str(start_count)
+                criminel = Criminel(unique_id, self, self.largeur, self.longueur)
+                self.grid.place_agent(criminel, (criminel.x, criminel.y))
                 self.schedule.add(criminel)
                 start_count = start_count + 1
                 self.total_agents = start_count
@@ -133,14 +133,14 @@ class BurglaryModel(Model):
             except:
                 self.kill_agents.remove(row)
 
-        # add new criminals
+        # add new criminels
 
-        self.add_criminals()
+        self.add_criminels()
 
 
 if __name__ == '__main__':
-    model = BurglaryModel(5, 128, 128, 2, 5, 5, 5.6, 0.2, 5)
+    model = BurglaryModel(5, 12, 1, 2, 5, 5, 5.6, 0.2, 5, 1)
     for i in range(10):
         model.step()
 
-    print(model)
+    #print(model)

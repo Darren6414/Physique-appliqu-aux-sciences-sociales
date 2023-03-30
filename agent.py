@@ -63,8 +63,9 @@ class House(Agent):
         """
         voisins = self.model.grid.get_neighbors(pos=(self.x, self.y),moore=False, include_center=False, radius=1)
         Bsv = 0
-        if isinstance(v, House):                        # on regarde si il s'agit d'une maison
-            Bsv = np.sum([v.Bs for v in voisins])
+        for v in voisins:
+            if isinstance(v, House):                        # on regarde si il s'agit d'une maison
+                Bsv = Bsv + v.Bs
   
         laplacien = Bsv - (4 * self.Bs)                 # on calcule laplacien*(l**2) avec la formule 2-7
         self.nBs = (self.Bs + (self.eta / 4) * laplacien) * (1 - self.omega * (self.delta)) + self.theta * self.crimes
@@ -150,9 +151,11 @@ class Criminel(Agent):
         # on calcule la somme des attractivités des maisons au voisinage de la maison où se trouve 
         # le criminel
         Asum = 0
-        A = [v.As  for v in voisins]
-        if isinstance(v, House):
-            Asum = sum(A)
+        A= []
+        for v in voisins:
+            if isinstance(v, House):
+                A.append(v.As)
+        Asum = sum(A)
             
         # on calcule la probabilité d'aller dans chacune des maisons avec la formule donnée par 2-3
         move = []
