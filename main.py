@@ -5,33 +5,27 @@ from matplotlib import colors
 import matplotlib.animation as animation
 from agent import House
 
-model = model.BurglaryModel(0, 12, 10, 5, 0.01, .06, 5.6, 0.1, 0.019, 1)
+model = model.BurglaryModel(10, 100, 100, delta = 0.01, omega = .06, theta = 10, eta = 0.1, gamma = 0.04, space = 0.1)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    for i in range(1000):
+
+if __name__ == '__main__':    
+    for i in range(1000):   #on effectue 1000 itérations
         model.step()
-        #print(i)
+        print(i)
 
-    crime_counts = np.zeros((model.grid.width, model.grid.height))
+    crime_counts = np.zeros((model.grid.width, model.grid.height))     #à l'issu des 1000 itérations on crée une matrice qui stocke le nombre de cambriolage pour chaque maison 
     for cell in model.grid.coord_iter():
         content, x, y = cell
         crimes = 0
         for row in content:
             if isinstance(row, House):
-                crimes = row.As
+                crimes = row.att_t
                 crime_counts[x][y] = crimes
 
-    norm = colors.Normalize(vmin=0.2, vmax=(model.theta * 0.75))
+    norm = colors.Normalize(vmin=0.2, vmax=(model.theta * 0.5))    #on plot une heatmap correspondant à cette matrice
 
     plt.imshow(crime_counts, interpolation='nearest', cmap=plt.get_cmap('seismic'), norm=norm)
     plt.colorbar()
     plt.show()
 
-    As = model.datacollector.get_model_vars_dataframe()
-    houses = model.datacollector.get_agent_vars_dataframe()
-
-    As.to_csv('model_stats.csv')
-    houses.to_csv('houses.csv')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    
